@@ -3,9 +3,6 @@
 # Project Name
 EcoSync: Revolutionizing Waste Management in Dhaka North City Corporation
 
-## Description
-Brief description of your project.
-
 ## Installation
 To get started, follow these steps:
 
