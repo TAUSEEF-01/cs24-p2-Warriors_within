@@ -202,7 +202,11 @@
         <div class="col-sm-6 mt-4">
           <div class="register-box">
             <h2>Login form</h2>
-            <form action="/login" method="POST">
+            <form action="/auth/login" method="POST">
+
+              
+
+
               <div class="form-group">
                 <label for="email">Email:</label>
                 <input
@@ -225,8 +229,17 @@
               </div>
 
               <button type="submit" class="btn btn-dark">Submit</button>
-              <a href="/register" class="btn btn-primary">Register</a>
+              <a href="/auth/register" class="btn btn-primary">Register</a>
+
+
             </form>
+
+            <br>
+            <h4>Home</h4>
+              <form action="/auth" method="POST">  
+                <a href="/auth" class="btn btn-primary">Home</a>
+
+
           </div>
         </div>
       </div>

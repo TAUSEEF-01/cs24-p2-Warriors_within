@@ -200,7 +200,7 @@
         <div class="col-sm-6 mt-4">
             <div class="register-box">
                 <h2>Register form</h2>
-                <form action="/register" method="POST">
+                <form action="/auth/register" method="POST">
                     <div class="form-group">
                         <label for="name">Name:</label>
                         <input type="text" class="form-control" id="name" placeholder="Enter name" name="name" value="{{ request.form.name }}" {% if not request.form.name %} placeholder="Fill this field" {% endif %}>
@@ -233,9 +233,15 @@
                     </div>
 
                     <button type="submit" class="btn btn-dark">Submit</button>
-                    <a href="/login" class="btn btn-primary">Login</a>
+                    <a href="/auth/login" class="btn btn-primary">Login</a>
                 </form>
+
+                <br>
+            <h4>Home</h4>
+              <form action="/auth" method="POST">  
+                <a href="/auth" class="btn btn-primary">Home</a>
             </div>
+            
         </div>
     </div>
 </div>

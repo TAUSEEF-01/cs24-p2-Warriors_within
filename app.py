@@ -31,11 +31,19 @@ class User(db.Model):
 
 with app.app_context():
     db.create_all()
+    
+    
+# @app.route('/')
+# def index():
+#     return render_template('index.html')
 
 
-@app.route('/')
+@app.route('/auth')
 def index():
     return render_template('index.html')
+
+
+
 
 # @app.route('/register',methods=['GET','POST'])
 # def register():
@@ -60,7 +68,7 @@ def index():
 
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/auth/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         # handle request
@@ -77,12 +85,12 @@ def register():
         new_user = User(name=name, email=email, password=password, phoneNumber=phoneNumber, role=role)
         db.session.add(new_user)
         db.session.commit()
-        return redirect('/login')
+        return redirect('/auth/login')
 
     return render_template('register.html')
 
 
-@app.route('/login',methods=['GET','POST'])
+@app.route('/auth/login',methods=['GET','POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
@@ -92,25 +100,65 @@ def login():
         
         if user and user.check_password(password):
             session['email'] = user.email
-            return redirect('/dashboard')
+            return redirect('/auth/dashboard')
         else:
             return render_template('login.html',error='Invalid user')
 
     return render_template('login.html')
 
 
-@app.route('/dashboard')
+@app.route('/auth/dashboard')
 def dashboard():
     if session['email']:
         user = User.query.filter_by(email=session['email']).first()
         return render_template('dashboard.html',user=user)
     
-    return redirect('/login')
+    return redirect('/auth/login')
 
-@app.route('/logout')
+@app.route('/auth/logout')
 def logout():
     session.pop('email',None)
-    return redirect('/login')
+    return redirect('/auth/login')
+
+
+@app.route('/auth/reset-password', methods=['POST'])
+def reset_password():
+    if request.method == 'POST':
+        email = request.json.get('email')  # Assuming JSON payload with 'email' field
+
+        # Here you can implement your logic to initiate the password reset process,
+        # such as sending an email with a password reset link, generating a token, etc.
+
+        # Example logic (replace with your actual implementation):
+        # - Check if the email exists in your database
+        # - Generate a password reset token
+        # - Send an email to the user with the password reset link containing the token
+
+        # Placeholder response
+        return jsonify({'message': 'Password reset initiated for email: {}'.format(email)}), 200
+
+    return jsonify({'error': 'Method Not Allowed'}), 405
+
+
+
+@app.route('/auth/reset-password/initiate', methods=['POST'])
+def initiate_reset_password():
+    if request.method == 'POST':
+        email = request.json.get('email')  # Assuming JSON payload with 'email' field
+
+        # Here you can implement your logic to initiate the password reset process,
+        # such as sending an email with a password reset link, generating a token, etc.
+
+        # Example logic (replace with your actual implementation):
+        # - Check if the email exists in your database
+        # - Generate a password reset token
+        # - Send an email to the user with the password reset link containing the token
+
+        # Placeholder response
+        return jsonify({'message': 'Password reset initiated for email: {}'.format(email)}), 200
+
+    return jsonify({'error': 'Method Not Allowed'}), 405
+
 
 if __name__ == '__main__':
     app.run(debug=True)
