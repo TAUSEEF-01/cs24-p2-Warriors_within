@@ -1,22 +1,28 @@
 # cs24-p2-Warriors_within
 
-<br>
-Open terminal and download all the requirements.
-</br>
-<br>
-Linux command - 
-</br>
-<br>
+# Project Name
+EcoSync: Revolutionizing Waste Management in Dhaka North City Corporation
+
+## Description
+Brief description of your project.
+
+## Installation
+To get started, follow these steps:
+
+### 1. Download Requirements
+Open your terminal and download all the requirements.
+
+#### Linux Command:
 pip3 install -r requirements.txt
-</br>
-<br>
-run the app.py file.
-</br>
-<br>
-Linux command - 
-</br>
-<br>
+
+### 2. Run the Application
+After installing the requirements, run the `app.py` file.
+
+#### Linux Command:
 python3 app.py
-</br>
+
+
+## License
+This project is licensed under the [MIT License](LICENSE).
 
 
