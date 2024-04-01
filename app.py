@@ -181,6 +181,201 @@ def get_user(user_id):
 
 
 
+# @app.route('/users', methods=['POST'])
+# def create_user():
+#     # Check if the request method is POST
+#     if request.method == 'POST':
+#         # Check if the user is a system admin (you can replace this condition with your own logic)
+#         # if is_system_admin():
+#         # Assuming the request contains JSON data with user details
+#         user_data = request.json
+
+#         # Extract user details from JSON data
+#         name = user_data.get('name')
+#         email = user_data.get('email')
+#         phoneNumber = user_data.get('phoneNumber')
+#         role = user_data.get('role')
+#         password = user_data.get('password')  # Assuming password is included in the request
+
+#         # Validate if all required fields are present
+#         if not name or not email or not phoneNumber or not role or not password:
+#             return jsonify({'error': 'Missing required fields'}), 400
+
+#         # Check if the email is already in use
+#         if User.query.filter_by(email=email).first():
+#             return jsonify({'error': 'Email already exists'}), 409
+
+#         # Create a new user instance
+#         new_user = User(name=name, email=email, phoneNumber=phoneNumber, role=role)
+
+#         # Hash the password before storing it
+#         # new_user.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+#         # Add the new user to the database
+#         db.session.add(new_user)
+#         db.session.commit()
+
+#         # Return success response
+#         return jsonify({'message': 'User created successfully'}), 201
+
+#     # Return unauthorized error if request method is not POST
+#     return jsonify({'error': 'Unauthorized'}), 401
+
+
+
+
+@app.route('/users', methods=['POST'])
+def create_user():
+    # Check if the request method is POST
+    if request.method == 'POST':
+        # Assuming the request contains JSON data with user details
+        user_data = request.json
+
+        # Extract user details from JSON data
+        name = user_data.get('name')
+        email = user_data.get('email')
+        phoneNumber = user_data.get('phoneNumber')
+        role = user_data.get('role')
+        password = user_data.get('password')  # Assuming password is included in the request
+
+        # Validate if all required fields are present
+        if not name or not email or not phoneNumber or not role or not password:
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Check if the email is already in use
+        if User.query.filter_by(email=email).first():
+            return jsonify({'error': 'Email already exists'}), 409
+
+        # Create a new user instance
+        new_user = User(name=name, email=email, phoneNumber=phoneNumber, role=role, password=password)
+
+        # Add the new user to the database
+        db.session.add(new_user)
+        db.session.commit()
+
+        # Return success response
+        return jsonify({'message': 'User created successfully'}), 201
+
+    # Return unauthorized error if request method is not POST
+    return jsonify({'error': 'Unauthorized'}), 401
+
+
+
+
+@app.route('/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    # Check if the request method is PUT
+    if request.method == 'PUT':
+        # Assuming the request contains JSON data with updated user details
+        updated_data = request.json
+
+        # Retrieve the user from the database by user_id
+        user = User.query.get(user_id)
+
+        # Check if the user exists
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        if user:
+            # Update the user's details
+            if 'name' in updated_data:
+                user.name = updated_data['name']
+            if 'email' in updated_data:
+                user.email = updated_data['email']
+            if 'phoneNumber' in updated_data:
+                user.phoneNumber = updated_data['phoneNumber']
+            if 'role' in updated_data:
+                user.role = updated_data['role']
+            
+            # Commit the changes to the database
+            db.session.commit()
+
+            # Return success response
+            return jsonify({'message': 'User details updated successfully'}), 200
+        else:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+    # Return unauthorized error if request method is not PUT
+    return jsonify({'error': 'Method Not Allowed'}), 405
+
+
+
+
+
+@app.route('/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    # Check if the request method is DELETE
+    if request.method == 'DELETE':
+        # Check if the user is a system admin (you can replace this condition with your own logic)
+        # if is_system_admin():
+            # Find the user by user ID
+            user = User.query.get(user_id)
+
+            # Check if the user exists
+            if user:
+                # Delete the user from the database
+                db.session.delete(user)
+                db.session.commit()
+                return jsonify({'message': 'User deleted successfully'}), 200
+            else:
+                return jsonify({'error': 'User not found'}), 404
+        # else:
+        #     return jsonify({'error': 'Unauthorized'}), 401
+
+    # Return unauthorized error if request method is not DELETE
+    return jsonify({'error': 'Method Not Allowed'}), 405
+
+
+
+
+@app.route('/users/roles', methods=['GET'])
+def list_roles():
+    # Retrieve all distinct roles from the database
+    roles = User.query.with_entities(User.role).distinct().all()
+    
+    # Extract role names from the result
+    role_names = [role[0] for role in roles]
+    
+    # Return the list of roles as JSON response
+    return jsonify({'roles': role_names}), 200
+
+
+
+
+
+@app.route('/users/<int:user_id>/roles', methods=['PUT'])
+def update_user_roles(user_id):
+    # Check if the request method is PUT
+    if request.method == 'PUT':
+        # Check if the user is a system admin (you can replace this condition with your own logic)
+        # if is_system_admin():
+            # Retrieve the user from the database based on user ID
+            
+            updated_data = request.json
+            
+            user = User.query.get(user_id)
+
+            # Check if the user exists
+            if user:
+                # Get the roles data from the request
+                roles_data = request.json.get('roles')
+
+                # Update user's roles
+                # user.roles = roles_data
+                user.role = updated_data['role']
+
+                # Commit changes to the database
+                db.session.commit()
+
+                return jsonify({'message': 'User roles updated successfully'}), 200
+            else:
+                return jsonify({'error': 'User not found'}), 404
+        # else:
+        #     return jsonify({'error': 'Unauthorized'}), 401
+
+    # Return unauthorized error if request method is not PUT
+    return jsonify({'error': 'Method Not Allowed'}), 405
+
 
 
 if __name__ == '__main__':
