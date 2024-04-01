@@ -1,6 +1,7 @@
-from flask import Flask, request,render_template, redirect,session
+from flask import Flask, jsonify, request,render_template, redirect,session
 from flask_sqlalchemy import SQLAlchemy
 import bcrypt
+from psutil import users
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
@@ -13,7 +14,7 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
     
-    # # write code ------->
+    # write code ------->
     phoneNumber = db.Column(db.String(20), nullable=False, unique = True)
     role = db.Column(db.String(20), nullable=True, default='Unassigned')
 
@@ -28,14 +29,17 @@ class User(db.Model):
     
     def check_password(self,password):
         return bcrypt.checkpw(password.encode('utf-8'),self.password.encode('utf-8'))
+    
+    # def set_password(self,password):
+    #     self.password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 with app.app_context():
     db.create_all()
     
     
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
+@app.route('/')
+def root():
+    return render_template('root.html')
 
 
 @app.route('/auth')
@@ -44,27 +48,6 @@ def index():
 
 
 
-
-# @app.route('/register',methods=['GET','POST'])
-# def register():
-#     if request.method == 'POST':
-#         # handle request
-#         name = request.form['name']
-#         email = request.form['email']
-#         password = request.form['password']
-#         phoneNumber = request.form['phoneNumber']
-#         role = request.form['role']
-
-#         new_user = User(name=name,email=email,password=password,phoneNumber=phoneNumber,role=role)
-#         # new_user = User(name=name,email=email,password=password,phoneNumber=phoneNumber)
-#         # new_user = User(name=name,email=email,password=password)
-#         db.session.add(new_user)
-#         db.session.commit()
-#         return redirect('/login')
-
-
-
-#     return render_template('register.html')
 
 
 
@@ -90,6 +73,8 @@ def register():
     return render_template('register.html')
 
 
+
+
 @app.route('/auth/login',methods=['GET','POST'])
 def login():
     if request.method == 'POST':
@@ -107,6 +92,8 @@ def login():
     return render_template('login.html')
 
 
+
+
 @app.route('/auth/dashboard')
 def dashboard():
     if session['email']:
@@ -115,50 +102,215 @@ def dashboard():
     
     return redirect('/auth/login')
 
+
+
+
 @app.route('/auth/logout')
 def logout():
     session.pop('email',None)
     return redirect('/auth/login')
 
 
-@app.route('/auth/reset-password', methods=['POST'])
+
+
+
+@app.route('/auth/reset-password/initiate', methods=['GET', 'POST'])
 def reset_password():
     if request.method == 'POST':
-        email = request.json.get('email')  # Assuming JSON payload with 'email' field
+        email = request.form['email']
+        old_password = request.form['prev_password']
+        new_password = request.form['new_password']
 
-        # Here you can implement your logic to initiate the password reset process,
-        # such as sending an email with a password reset link, generating a token, etc.
+        # Find the user by email
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Check if the old password matches the stored password
+            if user.check_password(old_password):
+                # Update the user's password with the new password
+                
+                user.password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                db.session.commit()  # Commit the changes to the database
+                return redirect('/auth')  # Redirect to login page after resetting password
+            else:
+                return render_template('reset-password.html', error='Old password does not match')
+        else:
+            return render_template('reset-password.html', error='Invalid email')
+    
+    return render_template('reset-password.html')
 
-        # Example logic (replace with your actual implementation):
-        # - Check if the email exists in your database
-        # - Generate a password reset token
-        # - Send an email to the user with the password reset link containing the token
-
-        # Placeholder response
-        return jsonify({'message': 'Password reset initiated for email: {}'.format(email)}), 200
-
-    return jsonify({'error': 'Method Not Allowed'}), 405
 
 
+# def is_system_admin():
+#     # Assuming you have the user's email stored in the session after login
+#     if 'email' in session:
+#         user = User.query.filter_by(email=session['email']).first()
+#         # Assuming you have a 'role' attribute in your User model
+#         if user and user.role == 'admin':
+#             return True
+#     return False
 
-@app.route('/auth/reset-password/initiate', methods=['POST'])
-def initiate_reset_password():
-    if request.method == 'POST':
-        email = request.json.get('email')  # Assuming JSON payload with 'email' field
 
-        # Here you can implement your logic to initiate the password reset process,
-        # such as sending an email with a password reset link, generating a token, etc.
 
-        # Example logic (replace with your actual implementation):
-        # - Check if the email exists in your database
-        # - Generate a password reset token
-        # - Send an email to the user with the password reset link containing the token
 
-        # Placeholder response
-        return jsonify({'message': 'Password reset initiated for email: {}'.format(email)}), 200
+@app.route('/users', methods=['GET'])
+def list_users():
+    # if is_system_admin():  # Assuming you have a function to check if the user is a system admin
+    if request.method == 'GET':
+        users = User.query.all()
+        user_list = [{'id': user.id, 'name': user.name, 'email': user.email, 'phoneNumber': user.phoneNumber, 'role': user.role} for user in users]
+        return jsonify({'users': user_list}), 200
+    else:
+        return jsonify({'error': 'Unauthorized'}), 401
 
-    return jsonify({'error': 'Method Not Allowed'}), 405
+
+
+@app.route('/users/<int:user_id>', methods=['GET'])
+def get_user(user_id):
+    # if is_system_admin():  # Assuming you have a function to check if the user is a system admin
+    if request.method == 'GET':
+        user = User.query.get(user_id)
+        if user:
+            user_details = {'id': user.id, 'name': user.name, 'email': user.email, 'phoneNumber': user.phoneNumber, 'role': user.role}
+            return jsonify(user_details), 200
+        else:
+            return jsonify({'error': 'User not found'}), 404
+    else:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+
+
+
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+    
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+# @app.route('/register',methods=['GET','POST'])
+# def register():
+#     if request.method == 'POST':
+#         # handle request
+#         name = request.form['name']
+#         email = request.form['email']
+#         password = request.form['password']
+#         phoneNumber = request.form['phoneNumber']
+#         role = request.form['role']
+
+#         new_user = User(name=name,email=email,password=password,phoneNumber=phoneNumber,role=role)
+#         # new_user = User(name=name,email=email,password=password,phoneNumber=phoneNumber)
+#         # new_user = User(name=name,email=email,password=password)
+#         db.session.add(new_user)
+#         db.session.commit()
+#         return redirect('/login')
+
+
+
+#     return render_template('register.html')
+    
+    
+
+
+# @app.route('/auth/reset-password', methods=['POST'])
+# def reset_password():
+#     return redirect('/auth/login')
+    # if request.method == 'POST':
+    #     email = request.json.get('email')  # Assuming JSON payload with 'email' field
+
+    #     # Here you can implement your logic to initiate the password reset process,
+    #     # such as sending an email with a password reset link, generating a token, etc.
+
+    #     # Example logic (replace with your actual implementation):
+    #     # - Check if the email exists in your database
+    #     # - Generate a password reset token
+    #     # - Send an email to the user with the password reset link containing the token
+
+    #     # Placeholder response
+    #     return jsonify({'message': 'Password reset initiated for email: {}'.format(email)}), 200
+
+    # return jsonify({'error': 'Method Not Allowed'}), 405
+
+
+######################################
+# @app.route('/auth/reset-password/initiate', methods=['GET', 'POST'])
+# def reset_password():
+#     if request.method == 'POST':
+#         email = request.form['email']
+#         new_password = request.form['new_password']
+
+#         # Find the user by email
+#         user = next((user for user in users if user["email"] == email), None)
+
+#         if user:
+#             # Update the user's password with the new password
+#             user["password"] = new_password
+#             return redirect('/auth/login')  # Redirect to login page after resetting password
+#         else:
+#             return render_template('reset-password.html', error='Invalid email')
+
+#     return render_template('reset-password.html')
+
+
+# @app.route('/auth/reset-password/initiate', methods=['GET', 'POST'])
+# def reset_password():
+#     if request.method == 'POST':
+#         email = request.form['email']
+#         new_password = request.form['new_password']
+
+#         # Find the user by email
+#         user = User.query.filter_by(email=email).first()
+
+#         if user:
+#             # Update the user's password with the new password
+            
+#             user.password = new_password
+#             db.session.commit()  # Commit the changes to the database
+#             return redirect('/auth')  # Redirect to login page after resetting password
+#         else:
+#             return render_template('reset-password.html', error='Invalid email')
+        
+#     return render_template('reset-password.html')
+
+
+
+
+
+
+    
+    
+    
+    
+    
+
+# @app.route('/auth/reset-password/initiate', methods=['POST'])
+# def initiate_reset_password():
+#     if request.method == 'POST':
+#         email = request.json.get('email')  # Assuming JSON payload with 'email' field
+
+#         # Here you can implement your logic to initiate the password reset process,
+#         # such as sending an email with a password reset link, generating a token, etc.
+
+#         # Example logic (replace with your actual implementation):
+#         # - Check if the email exists in your database
+#         # - Generate a password reset token
+#         # - Send an email to the user with the password reset link containing the token
+
+#         # Placeholder response
+#         return jsonify({'message': 'Password reset initiated for email: {}'.format(email)}), 200
+
+#     return jsonify({'error': 'Method Not Allowed'}), 405
