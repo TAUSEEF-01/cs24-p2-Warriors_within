@@ -22,4 +22,6 @@ python3 app.py
 ## License
 This project is licensed under the [MIT License](LICENSE).
 
-
+### 2. Run the Application(docker)
+docker-compose up -d —build
+http://localhost:5001/auth
